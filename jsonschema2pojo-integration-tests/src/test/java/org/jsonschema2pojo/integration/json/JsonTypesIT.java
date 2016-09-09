@@ -16,27 +16,40 @@
 
 package org.jsonschema2pojo.integration.json;
 
-import static org.jsonschema2pojo.integration.util.CodeGenerationHelper.*;
 import static java.util.Arrays.*;
 import static org.hamcrest.Matchers.*;
+import static org.jsonschema2pojo.integration.util.CodeGenerationHelper.*;
 import static org.junit.Assert.*;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 
+import org.jsonschema2pojo.integration.util.Jsonschema2PojoRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
 public class JsonTypesIT {
+
+    @Rule
+    public Jsonschema2PojoRule schemaRule = new Jsonschema2PojoRule();
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Test
     public void simpleTypesInExampleAreMappedToCorrectJavaTypes() throws Exception {
 
-        ClassLoader resultsClassLoader = generateAndCompile("/json/simpleTypes.json", "com.example",
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/json/simpleTypes.json", "com.example",
                 config("sourceType", "json"));
 
         Class<?> generatedType = resultsClassLoader.loadClass("com.example.SimpleTypes");
@@ -51,10 +64,34 @@ public class JsonTypesIT {
 
     }
 
+    @Test
+    public void integerIsMappedToBigInteger() throws Exception {
+
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/json/simpleTypes.json", "com.example", config("sourceType", "json", "useBigIntegers", true));
+
+        Class<?> generatedType = resultsClassLoader.loadClass("com.example.SimpleTypes");
+
+        Object deserialisedValue = OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/json/simpleTypes.json"), generatedType);
+
+        assertThat((BigInteger) generatedType.getMethod("getB").invoke(deserialisedValue), is(new BigInteger("123")));
+    }
+
+    @Test
+    public void numberIsMappedToBigDecimal() throws Exception {
+
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/json/simpleTypes.json", "com.example", config("sourceType", "json", "useBigDecimals", true));
+
+        Class<?> generatedType = resultsClassLoader.loadClass("com.example.SimpleTypes");
+
+        Object deserialisedValue = OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/json/simpleTypes.json"), generatedType);
+
+        assertThat((BigDecimal) generatedType.getMethod("getC").invoke(deserialisedValue), is(new BigDecimal("12999999999999999999999.99")));
+    }
+
     @Test(expected = ClassNotFoundException.class)
     public void simpleTypeAtRootProducesNoJavaTypes() throws ClassNotFoundException {
 
-        ClassLoader resultsClassLoader = generateAndCompile("/json/simpleTypeAsRoot.json", "com.example",
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/json/simpleTypeAsRoot.json", "com.example",
                 config("sourceType", "json"));
 
         resultsClassLoader.loadClass("com.example.SimpleTypeAsRoot");
@@ -65,7 +102,7 @@ public class JsonTypesIT {
     @SuppressWarnings("unchecked")
     public void complexTypesProduceObjects() throws Exception {
 
-        ClassLoader resultsClassLoader = generateAndCompile("/json/complexObject.json", "com.example",
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/json/complexObject.json", "com.example",
                 config("sourceType", "json"));
 
         Class<?> complexObjectClass = resultsClassLoader.loadClass("com.example.ComplexObject");
@@ -90,7 +127,7 @@ public class JsonTypesIT {
     @SuppressWarnings("rawtypes")
     public void arrayTypePropertiesProduceLists() throws Exception {
 
-        ClassLoader resultsClassLoader = generateAndCompile("/json/array.json", "com.example",
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/json/array.json", "com.example",
                 config("sourceType", "json"));
 
         Class<?> arrayType = resultsClassLoader.loadClass("com.example.Array");
@@ -110,10 +147,60 @@ public class JsonTypesIT {
 
     }
 
+    @Test
+    public void arrayItemsAreRecursivelyMerged() throws Exception {
+
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/json/complexPropertiesInArrayItem.json", "com.example", config("sourceType", "json"));
+        Class<?> genType = resultsClassLoader.loadClass("com.example.ComplexPropertiesInArrayItem");
+        Class<?> listItemType = resultsClassLoader.loadClass("com.example.List");
+        Class<?> objItemType = resultsClassLoader.loadClass("com.example.Obj");
+
+        Object[] items = (Object[]) OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/json/complexPropertiesInArrayItem.json"), Array.newInstance(genType, 0).getClass());
+        {
+            Object item = items[0];
+
+            List<?> itemList = (List<?>) genType.getMethod("getList").invoke(item);
+            assertThat((Integer) listItemType.getMethod("getA").invoke(itemList.get(0)), is(1));
+            assertThat((String) listItemType.getMethod("getC").invoke(itemList.get(0)), is("hey"));
+            assertNull(listItemType.getMethod("getB").invoke(itemList.get(0)));
+
+            Object itemObj = genType.getMethod("getObj").invoke(item);
+            assertThat((String) objItemType.getMethod("getName").invoke(itemObj), is("k"));
+            assertNull(objItemType.getMethod("getIndex").invoke(itemObj));
+        }
+        {
+            Object item = items[1];
+
+            List<?> itemList = (List<?>) genType.getMethod("getList").invoke(item);
+            assertThat((Integer) listItemType.getMethod("getB").invoke(itemList.get(0)), is(177));
+            assertThat((String) listItemType.getMethod("getC").invoke(itemList.get(0)), is("hey again"));
+            assertNull(listItemType.getMethod("getA").invoke(itemList.get(0)));
+
+            Object itemObj = genType.getMethod("getObj").invoke(item);
+            assertThat((Integer) objItemType.getMethod("getIndex").invoke(itemObj), is(8));
+            assertNull(objItemType.getMethod("getName").invoke(itemObj));
+        }
+    }
+
+    @Test
+    public void arrayItemsAreNotRecursivelyMerged() throws Exception {
+
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/json/simplePropertiesInArrayItem.json", "com.example", config("sourceType", "json"));
+        Class<?> genType = resultsClassLoader.loadClass("com.example.SimplePropertiesInArrayItem");
+
+        // Different array items use different types for the same property;
+        // we don't support union types, so we have to pick one
+        assertEquals(Integer.class, genType.getMethod("getScalar").getReturnType());
+
+        thrown.expect(InvalidFormatException.class);
+        thrown.expectMessage("Can not construct instance of java.lang.Integer from String value (\"what\")");
+        OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/json/simplePropertiesInArrayItem.json"), Array.newInstance(genType, 0).getClass());
+    }
+
     @Test(expected = ClassNotFoundException.class)
     public void arrayAtRootProducesNoJavaTypes() throws Exception {
 
-        ClassLoader resultsClassLoader = generateAndCompile("/json/arrayAsRoot.json", "com.example",
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/json/arrayAsRoot.json", "com.example",
                 config("sourceType", "json"));
 
         resultsClassLoader.loadClass("com.example.ArrayAsRoot");

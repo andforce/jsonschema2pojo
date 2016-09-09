@@ -17,14 +17,15 @@
 package org.jsonschema2pojo.integration.ref;
 
 import static org.hamcrest.Matchers.*;
-import static org.jsonschema2pojo.integration.util.CodeGenerationHelper.*;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
 
 import org.jsonschema2pojo.Schema;
+import org.jsonschema2pojo.integration.util.Jsonschema2PojoRule;
 import org.jsonschema2pojo.rules.RuleFactory;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -34,12 +35,14 @@ import com.sun.codemodel.JPackage;
 
 public class FragmentRefIT {
 
+    @ClassRule public static Jsonschema2PojoRule classSchemaRule = new Jsonschema2PojoRule();
+
     private static Class<?> fragmentRefsClass;
 
     @BeforeClass
     public static void generateAndCompileEnum() throws ClassNotFoundException {
 
-        ClassLoader fragmentRefsClassLoader = generateAndCompile("/schema/ref/fragmentRefs.json", "com.example");
+        ClassLoader fragmentRefsClassLoader = classSchemaRule.generateAndCompile("/schema/ref/fragmentRefs.json", "com.example");
 
         fragmentRefsClass = fragmentRefsClassLoader.loadClass("com.example.FragmentRefs");
 
@@ -69,7 +72,36 @@ public class FragmentRefIT {
         JsonNode schema = new ObjectMapper().readTree("{\"type\":\"object\", \"properties\":{\"a\":{\"$ref\":\"#/b\"}}, \"b\":\"string\"}");
         
         JPackage p = codeModel._package("com.example");
-        new RuleFactory().getSchemaRule().apply("Example", schema, p, new Schema(null, schema));
+        new RuleFactory().getSchemaRule().apply("Example", schema, p, new Schema(null, schema, schema));
+    }
+    
+    @Test
+    public void refToInnerFragmentThatHasRefToOuterFragmentWithoutParentFile() throws IOException, ClassNotFoundException {
+        JCodeModel codeModel = new JCodeModel();
+        JsonNode schema = new ObjectMapper().readTree("{\n" + 
+        		"    \"type\": \"object\",\n" + 
+        		"    \"definitions\": {\n" + 
+        		"        \"location\": {\n" + 
+        		"            \"type\": \"object\",\n" + 
+        		"            \"properties\": {\n" + 
+        		"                \"cat\": {\n" + 
+        		"                    \"$ref\": \"#/definitions/cat\"\n" + 
+        		"                }\n" + 
+        		"            }\n" + 
+        		"        },\n" + 
+        		"        \"cat\": {\n" + 
+        		"            \"type\": \"number\"\n" + 
+        		"        }\n" + 
+        		"    },\n" + 
+        		"    \"properties\": {\n" + 
+        		"        \"location\": {\n" + 
+        		"            \"$ref\": \"#/definitions/location\"\n" + 
+        		"        }\n" + 
+        		"    }\n" + 
+        		"}");
+        
+        JPackage p = codeModel._package("com.example");
+        new RuleFactory().getSchemaRule().apply("Example", schema, p, new Schema(null, schema, schema));
     }
 
 }

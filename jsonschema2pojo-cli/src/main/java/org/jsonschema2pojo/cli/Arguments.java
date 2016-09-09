@@ -57,10 +57,10 @@ public class Arguments implements GenerationConfig {
     @Parameter(names = { "-b", "--generate-builders" }, description = "Generate builder-style methods as well as setters")
     private boolean generateBuilderMethods = false;
 
-    @Parameter(names = {"-c", "--generate-constructors"}, description = "Generate constructors")
+    @Parameter(names = { "-c", "--generate-constructors" }, description = "Generate constructors")
     private boolean generateConstructors = false;
 
-    @Parameter(names = {"-r", "--constructors-required-only"}, description = "Generate constructors with only required fields")
+    @Parameter(names = { "-r", "--constructors-required-only" }, description = "Generate constructors with only required fields")
     private boolean constructorsRequiredPropertiesOnly = false;
 
     @Parameter(names = { "-P", "--use-primitives" }, description = "Use primitives instead of wrapper types for bean properties")
@@ -72,8 +72,14 @@ public class Arguments implements GenerationConfig {
     @Parameter(names = { "-l", "--long-integers" }, description = "Use long (or Long) instead of int (or Integer) when the JSON Schema type 'integer' is encountered")
     private boolean useLongIntegers = false;
 
+    @Parameter(names = { "-bi", "--big-integers" }, description = "Use BigInteger instead of int (or Integer) when the JSON Schema type 'integer' is encountered. Note that this overrides -l/--long-integers")
+    private boolean useBigIntegers = false;
+
     @Parameter(names = { "-f", "--float-numbers" }, description = "Use float (or Float) instead of double (or Double) when the JSON Schema type 'number' is encountered")
     private boolean useFloatNumbers = false;
+
+    @Parameter(names = { "-i", "--big-decimals" }, description = "Use BigDecimal instead of double (or Double) when the JSON Schema type 'number' is encountered. Note that this overrides -f/--float-numbers")
+    private boolean useBigDecimals = false;
 
     @Parameter(names = { "-E", "--omit-hashcode-and-equals" }, description = "Omit hashCode and equals methods in the generated Java types")
     private boolean omitHashcodeAndEquals = false;
@@ -84,14 +90,10 @@ public class Arguments implements GenerationConfig {
     @Parameter(names = { "-a", "--annotation-style" })
     private AnnotationStyle annotationStyle = AnnotationStyle.JACKSON;
 
-    @Parameter(names = { "-A", "--custom-annotator" }, description = "The fully qualified class name of referring to a custom annotator class that implements org.jsonschema2pojo.Annotator " +
-            "and will be used in addition to the --annotation-style. If you want to use a custom annotator alone, set --annotation-style to none",
-            converter = ClassConverter.class)
+    @Parameter(names = { "-A", "--custom-annotator" }, description = "The fully qualified class name of referring to a custom annotator class that implements org.jsonschema2pojo.Annotator " + "and will be used in addition to the --annotation-style. If you want to use a custom annotator alone, set --annotation-style to none", converter = ClassConverter.class)
     private Class<? extends Annotator> customAnnotator = NoopAnnotator.class;
 
-    @Parameter(names = { "-F", "--custom-rule-factory" }, description = "The fully qualified class name of referring to a custom rule factory class that extends org.jsonschema2pojo.rules.RuleFactory " +
-            "to create custom rules for code generation.",
-            converter = ClassConverter.class)
+    @Parameter(names = { "-F", "--custom-rule-factory" }, description = "The fully qualified class name of referring to a custom rule factory class that extends org.jsonschema2pojo.rules.RuleFactory " + "to create custom rules for code generation.", converter = ClassConverter.class)
     private Class<? extends RuleFactory> customRuleFactory = RuleFactory.class;
 
     @Parameter(names = { "-303", "--jsr303-annotations" }, description = "Add JSR-303/349 annotations to generated Java types.")
@@ -106,17 +108,23 @@ public class Arguments implements GenerationConfig {
     @Parameter(names = { "-e", "--output-encoding" }, description = "The character encoding that should be used when writing the generated Java source files.")
     private String outputEncoding = "UTF-8";
 
-    @Parameter(names = { "-j", "--joda-dates" }, description = "Whether to use org.joda.time.DateTime instead of java" +
-            ".util.Date when adding date-time type fields to generated Java types.")
+    @Parameter(names = { "-j", "--joda-dates" }, description = "Whether to use org.joda.time.DateTime instead of java" + ".util.Date when adding date-time type fields to generated Java types.")
     private boolean useJodaDates = false;
 
-    @Parameter(names = { "-jd", "--joda-local-dates" }, description = "Whether to use org.joda.time.LocalDate instead" +
-            "of String when adding date type fields to generated Java types.")
+    @Parameter(names = { "-jd", "--joda-local-dates" }, description = "Whether to use org.joda.time.LocalDate instead" + "of String when adding date type fields to generated Java types.")
     private boolean useJodaLocalDates = false;
 
-    @Parameter(names = { "-jt", "--joda-local-times" }, description = "Whether to use org.joda.time.LocalTime instead" +
-            "of String when adding time type fields to generated Java types.")
+    @Parameter(names = { "-jt", "--joda-local-times" }, description = "Whether to use org.joda.time.LocalTime instead" + "of String when adding time type fields to generated Java types.")
     private boolean useJodaLocalTimes = false;
+
+    @Parameter(names = { "-dtt", "--datetime-class" }, description = "Specify datetime class")
+    private String dateTimeType = null;
+
+    @Parameter(names = { "-tt", "--time-class" }, description = "Specify time class")
+    private String timeType = null;
+
+    @Parameter(names = { "-dt", "--date-class" }, description = "Specify date class")
+    private String dateType = null;
 
     @Parameter(names = { "-c3", "--commons-lang3" }, description = "Whether to use commons-lang 3.x imports instead of commons-lang 2.x imports when adding equals, hashCode and toString methods.")
     private boolean useCommonsLang3 = false;
@@ -124,14 +132,32 @@ public class Arguments implements GenerationConfig {
     @Parameter(names = { "-pl", "--parcelable" }, description = "**EXPERIMENTAL** Whether to make the generated types 'parcelable' (for Android development).")
     private boolean parcelable = false;
 
+    @Parameter(names = { "-sl", "--serializable" }, description = "Whether to make the generated types 'serializable'.")
+    private boolean serializable = false;
+
     @Parameter(names = { "-N", "--null-collections" }, description = "Initialize Set and List fields to null instead of an empty collection.")
     private boolean nullCollections = false;
 
-    @Parameter(names = { "-y", "--class-prefix" }, description = "Initialize Set and List fields to null instead of an empty collection.")
+    @Parameter(names = { "-y", "--class-prefix" }, description = "Prefix for generated class.")
     private String classNamePrefix = "";
-    
-    @Parameter(names = { "-x", "--class-suffix" }, description = "Initialize Set and List fields to null instead of an empty collection.")
+
+    @Parameter(names = { "-x", "--class-suffix" }, description = "Suffix for generated class.")
     private String classNameSuffix = "";
+
+    @Parameter(names = { "-fe", "--file-extensions" }, description = "The extensions that should be considered as standard filename extensions when creating java class names.")
+    private String fileExtensions = "";
+
+    @Parameter(names = { "-D", "--disable-additional-properties" }, description = "Disable additional properties support on generated types, regardless of the input schema(s)")
+    private boolean disableAdditionalProperties = false;
+
+    @Parameter(names = { "-da", "--disable-accessors" }, description = "Whether to omit getter/setter methods and create public fields instead.")
+    private boolean disableAccessors = false;
+
+    @Parameter(names = { "-tv", "--target-version" }, description = "The target version for generated source files.")
+    private String targetVersion = "1.6";
+
+    @Parameter(names = { "-ida", "--include-dynamic-accessors" }, description = "Include dynamic getter, setter, and builder support on generated types.")
+    private boolean includeDynamicAccessors = false;
 
     private static final int EXIT_OKAY = 0;
     private static final int EXIT_ERROR = 1;
@@ -142,7 +168,7 @@ public class Arguments implements GenerationConfig {
      * If the command line arguments include the "help" argument, or if the
      * arguments have incorrect values or order, then usage information is
      * printed to {@link System#out} and the program terminates.
-     * 
+     *
      * @param args
      *            the command line arguments
      * @return an instance of the parsed arguments object
@@ -278,6 +304,11 @@ public class Arguments implements GenerationConfig {
         return parcelable;
     }
 
+    @Override
+    public boolean isSerializable() {
+        return serializable;
+    }
+
     protected void exit(int status) {
         System.exit(status);
     }
@@ -302,24 +333,64 @@ public class Arguments implements GenerationConfig {
         return classNameSuffix;
     }
 
-    /**
-     * Gets the 'includeConstructors' configuration option
-     *
-     * @return Whether to generate constructors or not.
-     */
+    @Override
+    public String[] getFileExtensions() {
+        return defaultString(fileExtensions).split(" ");
+    }
+
     @Override
     public boolean isIncludeConstructors() {
         return generateConstructors;
     }
 
-    /**
-     * Gets the 'constructorsRequiredPropertiesOnly' configuration option
-     *
-     * @return Whether generated constructors should have parameters for all properties, or only required ones.
-     */
     @Override
     public boolean isConstructorsRequiredPropertiesOnly() {
         return constructorsRequiredPropertiesOnly;
+    }
+
+    @Override
+    public boolean isIncludeAdditionalProperties() {
+        return disableAdditionalProperties;
+    }
+
+    @Override
+    public boolean isIncludeAccessors() {
+        return !disableAccessors;
+    }
+
+    @Override
+    public String getTargetVersion() {
+        return targetVersion;
+    }
+
+    @Override
+    public boolean isIncludeDynamicAccessors() {
+        return includeDynamicAccessors;
+    }
+
+    @Override
+    public String getDateTimeType() {
+        return dateTimeType;
+    }
+
+    @Override
+    public String getDateType() {
+        return dateType;
+    }
+
+    @Override
+    public String getTimeType() {
+        return timeType;
+    }
+
+    @Override
+    public boolean isUseBigIntegers() {
+        return useBigIntegers;
+    }
+
+    @Override
+    public boolean isUseBigDecimals() {
+        return useBigDecimals;
     }
 
 }

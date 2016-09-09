@@ -16,12 +16,12 @@
 
 package org.jsonschema2pojo;
 
-import org.jsonschema2pojo.rules.RuleFactory;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.net.URL;
 import java.util.Iterator;
+
+import org.jsonschema2pojo.rules.RuleFactory;
 
 /**
  * A generation config that returns default values for all behavioural options.
@@ -84,6 +84,9 @@ public class DefaultGenerationConfig implements GenerationConfig {
         return false;
     }
 
+    /**
+     * @return <code>true</code>
+     */
     @Override
     public boolean isUseDoubleNumbers() {
         return true;
@@ -182,13 +185,27 @@ public class DefaultGenerationConfig implements GenerationConfig {
         return false;
     }
 
+    /**
+     * @return <code>false</code>
+     */
     @Override
     public boolean isUseCommonsLang3() {
         return false;
     }
 
+    /**
+     * @return <code>false</code>
+     */
     @Override
     public boolean isParcelable() {
+        return false;
+    }
+
+    /**
+     * @return <code>false</code>
+     */
+    @Override
+    public boolean isSerializable() {
         return false;
     }
 
@@ -216,17 +233,86 @@ public class DefaultGenerationConfig implements GenerationConfig {
     }
 
     @Override
+    public String[] getFileExtensions() {
+        return new String[] {};
+    }
+
+    /**
+     * @return <code>false</code>
+     */
+    @Override
+    public boolean isUseBigIntegers() {
+        return false;
+    }
+
+    /**
+     * @return <code>false</code>
+     */
+    @Override
+    public boolean isUseBigDecimals() {
+        return false;
+    }
+
+    /**
+     * @return <code>false</code>
+     */
+    @Override
     public boolean isIncludeConstructors() {
         return false;
     }
 
     /**
-     * Gets the 'constructorsRequiredPropertiesOnly' configuration option
-     *
-     * @return Whether generated constructors should have parameters for all properties, or only required ones.
+     * @return <code>false</code>
      */
     @Override
     public boolean isConstructorsRequiredPropertiesOnly() {
         return false;
+    }
+
+    /**
+     * @return <code>true</code>
+     */
+    @Override
+    public boolean isIncludeAdditionalProperties() {
+        return true;
+    }
+
+    /**
+     * @return <code>true</code>
+     */
+    @Override
+    public boolean isIncludeAccessors() {
+        return true;
+    }
+
+    /**
+     * @return <code>1.6</code>
+     */
+    @Override
+    public String getTargetVersion() {
+        return "1.6";
+    }
+
+    /**
+     * @return <code>false</code>
+     */
+    @Override
+    public boolean isIncludeDynamicAccessors() {
+        return false;
+    }
+
+    @Override
+    public String getDateTimeType() {
+        return null;
+    }
+
+    @Override
+    public String getDateType() {
+        return null;
+    }
+
+    @Override
+    public String getTimeType() {
+        return null;
     }
 }

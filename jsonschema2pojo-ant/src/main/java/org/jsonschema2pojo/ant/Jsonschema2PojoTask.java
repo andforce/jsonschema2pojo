@@ -41,19 +41,19 @@ import org.jsonschema2pojo.Annotator;
 import org.jsonschema2pojo.GenerationConfig;
 import org.jsonschema2pojo.Jsonschema2Pojo;
 import org.jsonschema2pojo.NoopAnnotator;
-import org.jsonschema2pojo.URLProtocol;
 import org.jsonschema2pojo.SourceType;
+import org.jsonschema2pojo.URLProtocol;
 import org.jsonschema2pojo.rules.RuleFactory;
 import org.jsonschema2pojo.util.URLUtil;
 
 /**
- * When invoked, this task reads one or more <a
- * href="http://json-schema.org/">JSON Schema</a> documents and generates DTO
+ * When invoked, this task reads one or more
+ * <a href="http://json-schema.org/">JSON Schema</a> documents and generates DTO
  * style Java classes for data binding.
  * <p>
  * See <a href=
  * 'http://jsonschema2pojo.googlecode.com'>jsonschema2pojo.googlecode.com</a>.
- * 
+ *
  * @see <a href="http://ant.apache.org/manual/develop.html">Writing Your Own
  *      Task</a>
  */
@@ -77,7 +77,11 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     private boolean useLongIntegers;
 
+    private boolean useBigIntegers = false;
+
     private boolean useDoubleNumbers = true;
+
+    private boolean useBigDecimals = false;
 
     private boolean includeHashcodeAndEquals = true;
 
@@ -104,10 +108,12 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
     private boolean useJodaLocalDates = false;
 
     private boolean useJodaLocalTimes = false;
-    
+
     private boolean useCommonsLang3 = false;
 
     private boolean parcelable = false;
+
+    private boolean serializable = false;
 
     private boolean initializeCollections = true;
 
@@ -115,13 +121,30 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     private String classNameSuffix = "";
 
+    private String[] fileExtensions = new String[] {};
+
     private boolean constructorsRequiredPropertiesOnly = false;
+
+    private boolean includeAdditionalProperties = true;
+
+    private boolean includeAccessors = true;
+
+    private String targetVersion = "1.6";
+
+    private boolean includeDynamicAccessors = false;
+
+    private String dateTimeType = null;
+
+    private String timeType = null;
+
+    private String dateType = null;
+
 
     /**
      * Execute this task (it's expected that all relevant setters will have been
      * called by Ant to provide task configuration <em>before</em> this method
      * is called).
-     * 
+     *
      * @throws BuildException
      *             if this task cannot be completed due to some error reading
      *             schemas, generating types or writing output .java files.
@@ -174,7 +197,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
     /**
      * Build a classloader using the additional elements specified in
      * <code>classpath</code> and <code>classpathRef</code>.
-     * 
+     *
      * @return a new classloader that includes the extra path elements found in
      *         the <code>classpath</code> and <code>classpathRef</code> config
      *         values
@@ -201,7 +224,9 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'includeConstructors' property of this class
-     * @param includeConstructors Whether to generate constructors or not.
+     *
+     * @param includeConstructors
+     *            Whether to generate constructors or not.
      */
     public void setIncludeConstructors(boolean includeConstructors) {
         this.includeConstructors = includeConstructors;
@@ -209,7 +234,10 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'constructorsRequiredPropertiesOnly' property of this class.
-     * @param constructorsRequiredPropertiesOnly Whether generated constructors should have parameters for all properties, or only required ones.
+     *
+     * @param constructorsRequiredPropertiesOnly
+     *            Whether generated constructors should have parameters for all
+     *            properties, or only required ones.
      */
     public void setConstructorsRequiredPropertiesOnly(boolean constructorsRequiredPropertiesOnly) {
         this.constructorsRequiredPropertiesOnly = constructorsRequiredPropertiesOnly;
@@ -217,7 +245,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'generateBuilders' property of this class.
-     * 
+     *
      * @param generateBuilders
      *            Whether to generate builder-style methods of the form
      *            <code>withXxx(value)</code> (that return <code>this</code>),
@@ -231,7 +259,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'usePrimitives' property of this class.
-     * 
+     *
      * @param usePrimitives
      *            Whether to use primitives (<code>long</code>,
      *            <code>double</code> , <code>boolean</code>) instead of wrapper
@@ -246,7 +274,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'useLongIntegers' property of this class
-     * 
+     *
      * @param useLongIntegers
      *            Whether to use the java type <code>long</code> (or
      *            {@link java.lang.Long}) instead of <code>int</code> (or
@@ -258,8 +286,21 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
     }
 
     /**
+     * Sets the 'useBigIntegers' property of this class.
+     *
+     * @param useBigIntegers
+     *            Whether to use the java type {@link java.math.BigInteger}
+     *            instead of <code>int</code> (or {@link java.lang.Integer})
+     *            when representing the JSON Schema type 'integer'. Note that
+     *            this configuration overrides {@link #isUseLongIntegers()}.
+     */
+    public void setUseBigIntegers(boolean useBigIntegers) {
+        this.useBigIntegers = useBigIntegers;
+    }
+
+    /**
      * Sets the 'useDoubleNumbers' property of this class
-     * 
+     *
      * @param useDoubleNumbers
      *            Whether to use the java type <code>double</code> (or
      *            {@link java.lang.Double}) instead of <code>float</code> (or
@@ -271,9 +312,22 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
     }
 
     /**
+     * Sets the 'useBigDecimals' property of this class
+     *
+     * @param useBigDecimals
+     *            Whether to use the java type {@link java.math.BigDecimal}
+     *            instead of <code>float</code> (or {@link java.lang.Float})
+     *            when representing the JSON Schema type 'number'. Note that
+     *            this configuration overrides {@link #isUseDoubleNumbers()}.
+     */
+    public void setUseBigDecimals(boolean useBigDecimals) {
+        this.useBigDecimals = useBigDecimals;
+    }
+
+    /**
      * Sets schema file (or directory containing schema files) that should be
      * used for input.
-     * 
+     *
      * @param source
      *            Location of the JSON Schema file(s). Note: this may refer to a
      *            single file or a directory of files.
@@ -284,7 +338,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the target (output) directory for generated source files.
-     * 
+     *
      * @param targetDirectory
      *            Target directory for generated Java source files.
      */
@@ -294,7 +348,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the target package for generated types.
-     * 
+     *
      * @param targetPackage
      *            Package name used for generated Java classes (for types where
      *            a fully qualified name has not been supplied in the schema
@@ -306,7 +360,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'skip' property of this task.
-     * 
+     *
      * @param skip
      *            whether to skip execution of this task
      */
@@ -328,7 +382,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'includeHashcodeAndEquals' property of this class
-     * 
+     *
      * @param includeHashcodeAndEquals
      *            Whether to include <code>hashCode</code> and
      *            <code>equals</code> methods in generated Java types.
@@ -339,7 +393,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'includeToString' property of this class
-     * 
+     *
      * @param includeToString
      *            Whether to include a <code>toString</code> method in generated
      *            Java types.
@@ -350,7 +404,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'annotationStyle' property of this class
-     * 
+     *
      * @param annotationStyle
      *            The style of annotations to use in the generated Java types.
      */
@@ -360,7 +414,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'customAnnotator' property of this class
-     * 
+     *
      * @param customAnnotator
      *            A custom annotator to use to annotate the generated types
      */
@@ -377,6 +431,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public void setCustomRuleFactory(String customRuleFactory) {
         if (isNotBlank(customRuleFactory)) {
             try {
@@ -391,10 +446,10 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'includeJsr303Annotations' property of this class
-     * 
+     *
      * @param includeJsr303Annotations
-     *            Whether to include <a
-     *            href="http://jcp.org/en/jsr/detail?id=303">JSR-303</a>
+     *            Whether to include
+     *            <a href="http://jcp.org/en/jsr/detail?id=303">JSR-303</a>
      *            annotations (for schema rules like minimum, maximum, etc) in
      *            generated Java types.
      */
@@ -404,7 +459,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'sourceType' property of this class
-     * 
+     *
      * @param sourceType
      *            The type of input documents that will be read
      *            <p>
@@ -420,7 +475,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'removeOldOutput' property of this class
-     * 
+     *
      * @param removeOldOutput
      *            Whether to empty the target directory before generation
      *            occurs, to clear out all source files that have been generated
@@ -435,7 +490,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'outputEncoding' property of this class
-     * 
+     *
      * @param outputEncoding
      *            The character encoding that should be used when writing the
      *            generated Java source files
@@ -446,7 +501,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'useJodaDates' property of this class
-     * 
+     *
      * @param useJodaDates
      *            Whether to use {@link org.joda.time.DateTime} instead of
      *            {@link java.util.Date} when adding date type fields to
@@ -461,8 +516,8 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
      *
      * @param useJodaLocalDates
      *            Whether to use {@link org.joda.time.LocalDate} instead of
-     *            string when adding string fields of format date
-     *            (not date-time) to generated Java types.
+     *            string when adding string fields of format date (not
+     *            date-time) to generated Java types.
      */
     public void setUseJodaLocalDates(boolean useJodaLocalDates) {
         this.useJodaLocalDates = useJodaLocalDates;
@@ -473,8 +528,8 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
      *
      * @param useJodaLocalTimes
      *            Whether to use {@link org.joda.time.LocalTime} instead of
-     *            string when adding string fields of format time
-     *            (not date-time) to generated Java types.
+     *            string when adding string fields of format time (not
+     *            date-time) to generated Java types.
      */
     public void setUseJodaLocalTimes(boolean useJodaLocalTimes) {
         this.useJodaLocalTimes = useJodaLocalTimes;
@@ -482,7 +537,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Sets the 'useCommonsLang3' property of this class
-     * 
+     *
      * @param useCommonsLang3
      *            Whether to use commons-lang 3.x imports instead of
      *            commons-lang 2.x imports when adding equals, hashCode and
@@ -496,10 +551,21 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
      * Sets the 'parcelable' property of this class
      *
      * @param parcelable
-     *             Whether to make the generated types 'parcelable' (for Android development).
+     *            Whether to make the generated types 'parcelable' (for Android
+     *            development).
      */
     public void setParcelable(boolean parcelable) {
         this.parcelable = parcelable;
+    }
+
+    /**
+     * Sets the 'serializable' property of this class
+     *
+     * @param serializable
+     *            Whether to make the generated types 'serializable'.
+     */
+    public void setSerializable(boolean serializable) {
+        this.serializable = serializable;
     }
 
     /**
@@ -510,6 +576,82 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
      */
     public void setInitializeCollections(boolean initializeCollections) {
         this.initializeCollections = initializeCollections;
+    }
+
+    /**
+     * Sets the 'classNamePrefix' property of this class
+     *
+     * @param classNamePrefix
+     *            Whether to add a prefix to generated classes.
+     */
+    public void setClassNamePrefix(String classNamePrefix) {
+        this.classNamePrefix = classNamePrefix;
+    }
+
+    /**
+     * Sets the 'classNameSuffix' property of this class
+     *
+     * @param classNameSuffix
+     *            Whether to add a suffix to generated classes.
+     */
+    public void setClassNameSuffix(String classNameSuffix) {
+        this.classNameSuffix = classNameSuffix;
+    }
+
+    /**
+     * Sets the 'fileExtensions' property of this class
+     *
+     * @param classNameSuffix
+     *            The array of strings that should be considered as file
+     *            extensions and therefore not included in class names.
+     */
+    public void setFileExtensions(String[] fileExtensions) {
+        this.fileExtensions = fileExtensions;
+    }
+
+    /**
+     * Sets the 'includeAdditionalProperties' property of this class
+     *
+     * @param includeAdditionalProperties
+     *            Whether to allow 'additional properties' support in objects.
+     *            Setting this to false will disable additional properties
+     *            support, regardless of the input schema(s).
+     */
+    public void setIncludeAdditionalProperties(boolean includeAdditionalProperties) {
+        this.includeAdditionalProperties = includeAdditionalProperties;
+    }
+
+    /**
+     * Sets the 'includeAccessors' property of this class
+     *
+     * @param includeAccessors
+     *            Whether to include getters/setters or to omit these accessor
+     *            methods and create public fields instead.
+     */
+    public void setIncludeAccessors(boolean includeAccessors) {
+        this.includeAccessors = includeAccessors;
+    }
+
+    /**
+     * Sets the 'targetVersion' property of this class
+     *
+     * @param targetVersion
+     *            The target version for generated source files.
+     *            <p>
+     *            Default: <code>1.6</code>.
+     */
+    public void setTargetVersion(String targetVersion) {
+        this.targetVersion = targetVersion;
+    }
+
+    /**
+     * Sets the 'includeDynamicAccessors' property of this class
+     *
+     * @param includeDynamicAccessors
+     *            Whether to include dynamic getters, setters, and builders or to omit these methods.
+     */
+    public void setIncludeDynamicAccessors(boolean includeDynamicAccessors) {
+        this.includeDynamicAccessors = includeDynamicAccessors;
     }
 
     @Override
@@ -544,7 +686,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
 
     /**
      * Should this task be skipped? (don't read schemas, don't generate types)
-     * 
+     *
      * @return <code>true</code> if this task is disabled
      */
     public boolean isSkip() {
@@ -643,7 +785,7 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
     public boolean isUseJodaLocalTimes() {
         return useJodaLocalTimes;
     }
-    
+
     @Override
     public boolean isUseCommonsLang3() {
         return useCommonsLang3;
@@ -652,6 +794,11 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
     @Override
     public boolean isParcelable() {
         return parcelable;
+    }
+
+    @Override
+    public boolean isSerializable() {
+        return serializable;
     }
 
     @Override
@@ -675,18 +822,63 @@ public class Jsonschema2PojoTask extends Task implements GenerationConfig {
     }
 
     @Override
+    public String[] getFileExtensions() {
+        return fileExtensions;
+    }
+
+    @Override
     public boolean isIncludeConstructors() {
         return includeConstructors;
     }
 
-    /**
-     * Gets the 'constructorsRequiredPropertiesOnly' configuration option
-     *
-     * @return Whether generated constructors should have parameters for all properties, or only required ones.
-     */
     @Override
     public boolean isConstructorsRequiredPropertiesOnly() {
         return constructorsRequiredPropertiesOnly;
+    }
+
+    @Override
+    public boolean isIncludeAdditionalProperties() {
+        return includeAdditionalProperties;
+    }
+
+    @Override
+    public boolean isIncludeAccessors() {
+        return includeAccessors;
+    }
+
+    @Override
+    public String getTargetVersion() {
+        return targetVersion;
+    }
+
+    @Override
+    public boolean isIncludeDynamicAccessors() {
+        return includeDynamicAccessors;
+    }
+
+    @Override
+    public String getDateTimeType() {
+        return dateTimeType;
+    }
+
+    @Override
+    public String getDateType() {
+        return dateType;
+    }
+
+    @Override
+    public String getTimeType() {
+        return timeType;
+    }
+
+    @Override
+    public boolean isUseBigIntegers() {
+        return useBigIntegers;
+    }
+
+    @Override
+    public boolean isUseBigDecimals() {
+        return useBigDecimals;
     }
 
 }

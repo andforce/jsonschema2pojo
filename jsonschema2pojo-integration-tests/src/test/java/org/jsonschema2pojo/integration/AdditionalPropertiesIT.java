@@ -16,8 +16,8 @@
 
 package org.jsonschema2pojo.integration;
 
-import static org.jsonschema2pojo.integration.util.CodeGenerationHelper.*;
 import static org.hamcrest.Matchers.*;
+import static org.jsonschema2pojo.integration.util.CodeGenerationHelper.config;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.hamcrest.Matcher;
+import org.jsonschema2pojo.integration.util.Jsonschema2PojoRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
@@ -39,6 +41,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 
 public class AdditionalPropertiesIT {
+    
+    @Rule public Jsonschema2PojoRule schemaRule = new Jsonschema2PojoRule();
 
     private ObjectMapper mapper = new ObjectMapper();
 
@@ -46,7 +50,7 @@ public class AdditionalPropertiesIT {
     @SuppressWarnings("unchecked")
     public void jacksonCanDeserializeOurAdditionalProperties() throws ClassNotFoundException, IOException, SecurityException, NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
 
-        ClassLoader resultsClassLoader = generateAndCompile("/schema/additionalProperties/defaultAdditionalProperties.json", "com.example");
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/additionalProperties/defaultAdditionalProperties.json", "com.example");
 
         Class<?> classWithAdditionalProperties = resultsClassLoader.loadClass("com.example.DefaultAdditionalProperties");
 
@@ -62,17 +66,53 @@ public class AdditionalPropertiesIT {
 
     }
 
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void jacksonCanDeserializeOurAdditionalPropertiesWithoutIncludeAccessors() throws ClassNotFoundException, IOException, SecurityException, NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/additionalProperties/defaultAdditionalProperties.json", "com.example", config("includeAccessors", false));
+
+        Class<?> classWithAdditionalProperties = resultsClassLoader.loadClass("com.example.DefaultAdditionalProperties");
+
+        Object deserialized = mapper.readValue("{\"a\":\"1\", \"b\":2}", classWithAdditionalProperties);
+
+        Method getter = classWithAdditionalProperties.getMethod("getAdditionalProperties");
+
+        assertThat(getter.invoke(deserialized), is(notNullValue()));
+        assertThat(((Map<String, Object>) getter.invoke(deserialized)).containsKey("a"), is(true));
+        assertThat((String) ((Map<String, Object>) getter.invoke(deserialized)).get("a"), is("1"));
+        assertThat(((Map<String, Object>) getter.invoke(deserialized)).containsKey("b"), is(true));
+        assertThat((Integer) ((Map<String, Object>) getter.invoke(deserialized)).get("b"), is(2));
+
+    }
+ 
     @Test
     public void jacksonCanSerializeOurAdditionalProperties() throws ClassNotFoundException, IOException, SecurityException, NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException, InstantiationException {
 
-        ClassLoader resultsClassLoader = generateAndCompile("/schema/additionalProperties/defaultAdditionalProperties.json", "com.example");
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/additionalProperties/defaultAdditionalProperties.json", "com.example");
 
         Class<?> classWithAdditionalProperties = resultsClassLoader.loadClass("com.example.DefaultAdditionalProperties");
         String jsonWithAdditionalProperties = "{\"a\":1, \"b\":2};";
         Object instanceWithAdditionalProperties = mapper.readValue(jsonWithAdditionalProperties, classWithAdditionalProperties);
 
         JsonNode jsonNode = mapper.readTree(mapper.writeValueAsString(instanceWithAdditionalProperties));
-        
+
+        assertThat(jsonNode.path("a").asText(), is("1"));
+        assertThat(jsonNode.path("b").asInt(), is(2));
+    }
+
+    @Test
+    public void jacksonCanSerializeOurAdditionalPropertiesWithoutIncludeAccessors() throws ClassNotFoundException, IOException, SecurityException, NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException, InstantiationException {
+
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/additionalProperties/defaultAdditionalProperties.json", "com.example", config("includeAccessors", false));
+
+        Class<?> classWithAdditionalProperties = resultsClassLoader.loadClass("com.example.DefaultAdditionalProperties");
+        String jsonWithAdditionalProperties = "{\"a\":1, \"b\":2};";
+        Object instanceWithAdditionalProperties = mapper.readValue(jsonWithAdditionalProperties, classWithAdditionalProperties);
+
+        JsonNode jsonNode = mapper.readTree(mapper.writeValueAsString(instanceWithAdditionalProperties));
+
         assertThat(jsonNode.path("a").asText(), is("1"));
         assertThat(jsonNode.path("b").asInt(), is(2));
     }
@@ -80,9 +120,20 @@ public class AdditionalPropertiesIT {
     @Test(expected = UnrecognizedPropertyException.class)
     public void additionalPropertiesAreNotDeserializableWhenDisallowed() throws ClassNotFoundException, SecurityException, NoSuchMethodException, IOException {
 
-        ClassLoader resultsClassLoader = generateAndCompile("/schema/additionalProperties/noAdditionalProperties.json", "com.example");
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/additionalProperties/noAdditionalProperties.json", "com.example");
 
         Class<?> classWithNoAdditionalProperties = resultsClassLoader.loadClass("com.example.NoAdditionalProperties");
+
+        mapper.readValue("{\"a\":\"1\", \"b\":2}", classWithNoAdditionalProperties);
+
+    }
+
+    @Test(expected = UnrecognizedPropertyException.class)
+    public void additionalPropertiesAreNotDeserializableWhenDisabledGlobally() throws ClassNotFoundException, SecurityException, NoSuchMethodException, IOException {
+
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/additionalProperties/defaultAdditionalProperties.json", "com.example", config("includeAdditionalProperties", false));
+
+        Class<?> classWithNoAdditionalProperties = resultsClassLoader.loadClass("com.example.DefaultAdditionalProperties");
 
         mapper.readValue("{\"a\":\"1\", \"b\":2}", classWithNoAdditionalProperties);
 
@@ -91,7 +142,7 @@ public class AdditionalPropertiesIT {
     @Test
     public void additionalPropertiesOfStringTypeOnly() throws SecurityException, NoSuchMethodException, ClassNotFoundException {
 
-        ClassLoader resultsClassLoader = generateAndCompile("/schema/additionalProperties/additionalPropertiesString.json", "com.example", config("generateBuilders", true));
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/additionalProperties/additionalPropertiesString.json", "com.example", config("generateBuilders", true));
 
         Class<?> classWithNoAdditionalProperties = resultsClassLoader.loadClass("com.example.AdditionalPropertiesString");
         Method getter = classWithNoAdditionalProperties.getMethod("getAdditionalProperties");
@@ -100,7 +151,7 @@ public class AdditionalPropertiesIT {
 
         // setter with these types should exist:
         classWithNoAdditionalProperties.getMethod("setAdditionalProperty", String.class, String.class);
-        
+
         // builder with these types should exist:
         Method builderMethod = classWithNoAdditionalProperties.getMethod("withAdditionalProperty", String.class, String.class);
         assertThat("the builder method returns this type", builderMethod.getReturnType(), typeEqualTo(classWithNoAdditionalProperties));
@@ -110,7 +161,7 @@ public class AdditionalPropertiesIT {
     @Test
     public void additionalPropertiesOfObjectTypeCreatesNewClassForPropertyValues() throws SecurityException, NoSuchMethodException, ClassNotFoundException {
 
-        ClassLoader resultsClassLoader = generateAndCompile("/schema/additionalProperties/additionalPropertiesObject.json", "com.example", config("generateBuilders", true));
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/additionalProperties/additionalPropertiesObject.json", "com.example", config("generateBuilders", true));
 
         Class<?> classWithNoAdditionalProperties = resultsClassLoader.loadClass("com.example.AdditionalPropertiesObject");
         Class<?> propertyValueType = resultsClassLoader.loadClass("com.example.AdditionalPropertiesObjectProperty");
@@ -128,10 +179,10 @@ public class AdditionalPropertiesIT {
 
     }
 
-    @Test(expected=NoSuchMethodException.class)
+    @Test(expected = NoSuchMethodException.class)
     public void additionalPropertiesBuilderAbsentIfNotConfigured() throws SecurityException, NoSuchMethodException, ClassNotFoundException {
 
-        ClassLoader resultsClassLoader = generateAndCompile("/schema/additionalProperties/additionalPropertiesObject.json", "com.example");
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/additionalProperties/additionalPropertiesObject.json", "com.example");
 
         Class<?> classWithNoAdditionalProperties = resultsClassLoader.loadClass("com.example.AdditionalPropertiesObject");
         Class<?> propertyValueType = resultsClassLoader.loadClass("com.example.AdditionalPropertiesObjectProperty");
@@ -146,7 +197,7 @@ public class AdditionalPropertiesIT {
     @Test
     public void additionalPropertiesOfStringArrayTypeOnly() throws SecurityException, NoSuchMethodException, ClassNotFoundException {
 
-        ClassLoader resultsClassLoader = generateAndCompile("/schema/additionalProperties/additionalPropertiesArraysOfStrings.json", "com.example", config("generateBuilders", true));
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/additionalProperties/additionalPropertiesArraysOfStrings.json", "com.example", config("generateBuilders", true));
 
         Class<?> classWithNoAdditionalProperties = resultsClassLoader.loadClass("com.example.AdditionalPropertiesArraysOfStrings");
         Method getter = classWithNoAdditionalProperties.getMethod("getAdditionalProperties");
@@ -166,8 +217,7 @@ public class AdditionalPropertiesIT {
     @Test
     public void additionalPropertiesOfBooleanTypeOnly() throws SecurityException, NoSuchMethodException, ClassNotFoundException {
 
-        ClassLoader resultsClassLoader = generateAndCompile("/schema/additionalProperties/additionalPropertiesPrimitiveBoolean.json", "com.example",
-                config("usePrimitives", true, "generateBuilders", true));
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/additionalProperties/additionalPropertiesPrimitiveBoolean.json", "com.example", config("usePrimitives", true, "generateBuilders", true));
 
         Class<?> classWithNoAdditionalProperties = resultsClassLoader.loadClass("com.example.AdditionalPropertiesPrimitiveBoolean");
         Method getter = classWithNoAdditionalProperties.getMethod("getAdditionalProperties");
@@ -185,7 +235,7 @@ public class AdditionalPropertiesIT {
 
     @Test
     public void withAdditionalPropertyStoresValue() throws Exception {
-        ClassLoader resultsClassLoader = generateAndCompile("/schema/additionalProperties/additionalPropertiesString.json", "com.example", config("generateBuilders", true));
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/additionalProperties/additionalPropertiesString.json", "com.example", config("generateBuilders", true));
 
         Class<?> classWithNoAdditionalProperties = resultsClassLoader.loadClass("com.example.AdditionalPropertiesString");
         Method getter = classWithNoAdditionalProperties.getMethod("getAdditionalProperties");
@@ -194,7 +244,7 @@ public class AdditionalPropertiesIT {
         Object value = "value";
         Object instance = classWithNoAdditionalProperties.newInstance();
         Object result = builderMethod.invoke(instance, "prop", value);
-        Object stored = ((Map<?, ?>)getter.invoke(instance)).get("prop");
+        Object stored = ((Map<?, ?>) getter.invoke(instance)).get("prop");
 
         assertThat("the builder returned the instance", result, sameInstance(instance));
         assertThat("the getter returned the value", stored, sameInstance(value));
@@ -206,23 +256,23 @@ public class AdditionalPropertiesIT {
         mapper.configure(MapperFeature.AUTO_DETECT_GETTERS, false);
         mapper.configure(MapperFeature.AUTO_DETECT_SETTERS, false);
         mapper.setVisibilityChecker(mapper.getVisibilityChecker().with(Visibility.ANY));
-        
-        ClassLoader resultsClassLoader = generateAndCompile("/schema/additionalProperties/defaultAdditionalProperties.json", "com.example");
+
+        ClassLoader resultsClassLoader = schemaRule.generateAndCompile("/schema/additionalProperties/defaultAdditionalProperties.json", "com.example");
 
         Class<?> classWithAdditionalProperties = resultsClassLoader.loadClass("com.example.DefaultAdditionalProperties");
         String jsonWithAdditionalProperties = "{\"a\":1, \"b\":2};";
         Object instanceWithAdditionalProperties = mapper.readValue(jsonWithAdditionalProperties, classWithAdditionalProperties);
 
         JsonNode jsonNode = mapper.readTree(mapper.writeValueAsString(instanceWithAdditionalProperties));
-        
+
         assertThat(jsonNode.path("a").asText(), is("1"));
         assertThat(jsonNode.path("b").asInt(), is(2));
         assertThat(jsonNode.has("additionalProperties"), is(false));
     }
 
     @SuppressWarnings("rawtypes")
-    public static Matcher<Class> typeEqualTo( Class<?> type ) {
-        return equalTo((Class)type);
+    public static Matcher<Class> typeEqualTo(Class<?> type) {
+        return equalTo((Class) type);
     }
 
 }

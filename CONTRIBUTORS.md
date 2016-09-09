@@ -31,3 +31,35 @@
 * Jakub Wierzbowski
 * David McFarland
 * Brent Ryan
+* Marudhachalam, Karthikeyan
+* Huang Wei
+* Sim Sun
+* Srikalyan Swayampakula
+* Nate Stoddard
+* Josh Deffibaugh
+* Jaeho Suk
+* Alexey Hanin
+* Mark Ingram
+* Andreas Kohn
+* D Redreev
+* Ben Jefferies
+* blizznets
+* R Patrick
+* Denis Miorandi
+* P Wilder
+* Rakshith Rao (rakrao)
+* Lomig Megard
+* Rami Baksansky
+* Dimitrij Drus
+* Arno Puder
+* SpaceBison
+* Mike Woudenberg
+* Tobias Preuss
+* Max Myslyvtsev
+* Thach Hoang
+* Sam Duke
+* Alex Macrae
+* Łukasz Grabski
+* Jens Teglhus Møller
+* Jonathan Landis
+* Jonathan Ogilvie

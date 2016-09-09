@@ -16,18 +16,21 @@
 
 package org.jsonschema2pojo.util;
 
-import static java.lang.Character.*;
-import static javax.lang.model.SourceVersion.isKeyword;
-import static org.apache.commons.lang3.StringUtils.*;
-
+import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.codemodel.JType;
-import org.apache.commons.lang3.text.WordUtils;
 
+import org.apache.commons.lang3.text.WordUtils;
 import org.jsonschema2pojo.GenerationConfig;
+
+import static java.lang.Character.isDigit;
+import static javax.lang.model.SourceVersion.isKeyword;
+import static org.apache.commons.lang3.StringUtils.capitalize;
+import static org.apache.commons.lang3.StringUtils.containsAny;
+import static org.apache.commons.lang3.StringUtils.remove;
 
 public class NameHelper {
 
-    private static final String ILLEGAL_CHARACTER_REGEX = "[^0-9a-zA-Z_$]";
+    public static final String ILLEGAL_CHARACTER_REGEX = "[^0-9a-zA-Z_$]";
 
     private final GenerationConfig generationConfig;
 
@@ -64,14 +67,24 @@ public class NameHelper {
         return name;
     }
 
+    private String makeLowerCamelCase(String name) {
+        return Character.toLowerCase(name.charAt(0)) + name.substring(1);
+    }
+
     /**
-     * Convert jsonFieldName into the equivalent Java fieldname by replacing illegal characters and normalizing it.
+     * Convert jsonFieldName into the equivalent Java fieldname by replacing
+     * illegal characters and normalizing it.
+     * 
      * @param jsonFieldName
+     * @param node
      * @return
      */
-    public String getPropertyName(String jsonFieldName) {
+    public String getPropertyName(String jsonFieldName, JsonNode node) {
+        jsonFieldName = getFieldName(jsonFieldName, node);
+
         jsonFieldName = replaceIllegalCharacters(jsonFieldName);
         jsonFieldName = normalizeName(jsonFieldName);
+        jsonFieldName = makeLowerCamelCase(jsonFieldName);
 
         if (isKeyword(jsonFieldName)) {
             jsonFieldName = "_" + jsonFieldName;
@@ -84,13 +97,16 @@ public class NameHelper {
         return jsonFieldName;
     }
 
-
     /**
-     * Generate setter method name for property. 
+     * Generate setter method name for property.
+     * 
      * @param propertyName
+     * @param node
      * @return
      */
-    public String getSetterName(String propertyName) {
+    public String getSetterName(String propertyName, JsonNode node) {
+        propertyName = getFieldName(propertyName, node);
+
         propertyName = replaceIllegalCharacters(propertyName);
         String setterName = "set" + capitalize(capitalizeTrailingWords(propertyName));
 
@@ -101,14 +117,33 @@ public class NameHelper {
         return setterName;
     }
 
+    /**
+     * Get name of the field generated from property.
+     *
+     * @param propertyName
+     * @param node
+     * @return
+     */
+    public String getFieldName(String propertyName, JsonNode node) {
+        
+        if (node != null && node.has("javaName")) {
+            propertyName = node.get("javaName").textValue();
+        }
+
+        return propertyName;
+    }
 
     /**
      * Generate getter method name for property.
+     * 
      * @param propertyName
      * @param type
+     * @param node
      * @return
      */
-    public String getGetterName(String propertyName, JType type) {
+    public String getGetterName(String propertyName, JType type, JsonNode node) {
+        propertyName = getFieldName(propertyName, node);
+
         String prefix = type.equals(type.owner()._ref(boolean.class)) ? "is" : "get";
         propertyName = replaceIllegalCharacters(propertyName);
         String getterName = prefix + capitalize(capitalizeTrailingWords(propertyName));

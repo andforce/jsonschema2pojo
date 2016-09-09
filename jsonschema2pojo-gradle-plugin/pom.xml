@@ -5,7 +5,7 @@
     <parent>
         <artifactId>jsonschema2pojo</artifactId>
         <groupId>org.jsonschema2pojo</groupId>
-        <version>0.4.12-SNAPSHOT</version>
+        <version>0.4.27-SNAPSHOT</version>
     </parent>
 
     <artifactId>jsonschema2pojo-gradle-plugin</artifactId>
@@ -59,11 +59,13 @@
     </dependencies>
 
     <build>
+        <sourceDirectory>${project.basedir}/src/main/groovy</sourceDirectory>
+        <testSourceDirectory>${project.basedir}/src/test/groovy</testSourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.gmavenplus</groupId>
                 <artifactId>gmavenplus-plugin</artifactId>
-                <version>1.4</version>
+                <version>1.5</version>
                 <executions>
                     <execution>
                         <goals>
@@ -95,6 +97,11 @@
                         <include>**/*Spec.*</include>
                     </includes>
                 </configuration>
+              </plugin>
+              <plugin>
+                  <groupId>org.codehaus.mojo</groupId>
+                  <artifactId>codenarc-maven-plugin</artifactId>
+                  <version>0.22-1</version>
               </plugin>
         </plugins>
     </build>

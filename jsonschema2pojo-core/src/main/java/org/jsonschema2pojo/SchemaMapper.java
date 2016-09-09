@@ -16,6 +16,14 @@
 
 package org.jsonschema2pojo;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
+
+import org.jsonschema2pojo.rules.RuleFactory;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -23,10 +31,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.codemodel.JCodeModel;
 import com.sun.codemodel.JPackage;
 import com.sun.codemodel.JType;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
-import org.jsonschema2pojo.rules.RuleFactory;
 
 /**
  * Generates Java types from a JSON schema. Can accept a factory which will be
@@ -40,7 +44,7 @@ public class SchemaMapper {
 
     /**
      * Create a schema mapper with the given {@link RuleFactory}.
-     * 
+     *
      * @param ruleFactory
      *            A factory used by this mapper to create Java type generation
      *            rules.
@@ -56,7 +60,7 @@ public class SchemaMapper {
     /**
      * Create a schema mapper with the default {@link RuleFactory}
      * implementation.
-     * 
+     *
      * @see RuleFactory
      */
     public SchemaMapper() {
@@ -65,7 +69,7 @@ public class SchemaMapper {
 
     /**
      * Reads a schema and adds generated types to the given code model.
-     * 
+     *
      * @param codeModel
      *            the java code-generation context that should be used to
      *            generated new types
@@ -85,7 +89,7 @@ public class SchemaMapper {
 
         ObjectNode schemaNode = readSchema(schemaUrl);
 
-        return ruleFactory.getSchemaRule().apply(className, schemaNode, jpackage, new Schema(null, schemaNode));
+        return ruleFactory.getSchemaRule().apply(className, schemaNode, jpackage, new Schema(null, schemaNode, schemaNode));
 
     }
 
@@ -104,26 +108,36 @@ public class SchemaMapper {
 
     }
 
-    public JType generate(JCodeModel codeModel, String className, String packageName, String json, 
+    public JType generate(JCodeModel codeModel, String className, String packageName, String json,
             URI schemaLocation) throws IOException {
 
         JPackage jpackage = codeModel._package(packageName);
 
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode schemaNode = mapper.readTree(json);
+        JsonNode schemaNode = objectMapper().readTree(json);
 
-        return ruleFactory.getSchemaRule().apply(className, schemaNode, jpackage, 
-                new Schema(schemaLocation, schemaNode));
+        return ruleFactory.getSchemaRule().apply(className, schemaNode, jpackage,
+                new Schema(schemaLocation, schemaNode, schemaNode));
     }
 
     public JType generate(JCodeModel codeModel, String className, String packageName, String json) throws IOException {
 
         JPackage jpackage = codeModel._package(packageName);
 
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode schemaNode = mapper.readTree(json);
+        JsonNode schemaNode = null;
+        if (ruleFactory.getGenerationConfig().getSourceType() == SourceType.JSON) {
+            JsonNode jsonNode = objectMapper().readTree(json);
+            schemaNode = schemaGenerator.schemaFromExample(jsonNode);
+        } else {
+            schemaNode = objectMapper().readTree(json);
+        }
 
-        return ruleFactory.getSchemaRule().apply(className, schemaNode, jpackage, 
-                new Schema(null, schemaNode));
+        return ruleFactory.getSchemaRule().apply(className, schemaNode, jpackage, new Schema(null, schemaNode, schemaNode));
     }
+
+    private ObjectMapper objectMapper() {
+        return new ObjectMapper()
+                .enable(JsonParser.Feature.ALLOW_COMMENTS)
+                .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
+    }
+
 }

@@ -38,10 +38,26 @@
             <li><code>JACKSON2</code> (apply annotations from the <a href="https://github.com/FasterXML/jackson-annotations">Jackson 2.x</a> library)</li>
             <li><code>JACKSON1</code> (apply annotations from the <a href="http://jackson.codehaus.org/">Jackson 1.x</a> library)</li>
             <li><code>GSON</code> (apply annotations from the <a href="https://code.google.com/p/google-gson//">Gson</a> library)</li>
+            <li><code>MOSHI1</code> (apply annotations from the <a href="https://github.com/square/moshi//">Moshi 1.x</a> library)</li>
             <li><code>NONE</code> (apply no annotations at all)</li>
           </ul>
         </td>
         <td align="center" valign="top">No (default <code>JACKSON2</code>)</td>
+      </tr>
+      <tr>
+        <td valign="top">classNamePrefix</td>
+        <td valign="top">Whether to add a prefix to generated classes</td>
+        <td align="center" valign="top">No (default <code>""</code>)</td>
+      </tr>
+      <tr>
+        <td valign="top">classNameSuffix</td>
+        <td valign="top">Whether to add a suffix to generated classes</td>
+        <td align="center" valign="top">No (default <code>""</code>)</td>
+      </tr>
+      <tr>
+        <td valign="top">fileExtensions</td>
+        <td valign="top">A string containing file extensions that should be considered full extensions and therefore ignored when generating classnames.</td>
+        <td align="center" valign="top">No (default <code>""</code> (none))</td>
       </tr>
       <tr>
         <td valign="top">classpath</td>
@@ -87,23 +103,35 @@
         <td align="center" valign="top">No (default <code>false</code>)</td>
       </tr>
       <tr>
-        <td valign="top">includeHashcodeAndEquals</td>
-        <td valign="top">Whether to use include <code>hashCode</code> and <code>equals</code> methods in generated Java types.</td>
+        <td valign="top">includeAccessors</td>
+        <td valign="top">Whether to include getters/setters or to omit these accessor methods and create public fields instead.</td>
         <td align="center" valign="top">No (default <code>true</code>)</td>
       </tr>
-
+      <tr>
+        <td valign="top">includeAdditionalProperties</td>
+        <td valign="top">Whether to allow 'additional properties' support in objects. Setting this to false will disable additional properties support, regardless of the input schema(s).</td>
+        <td align="center" valign="top">No (default <code>true</code>)</td>
+      </tr>
+      <tr>
+        <td valign="top">includeDynamicAccessors</td>
+        <td valign="top">Whether to include dynamic getters, setters, and builders or to omit these methods.</td>
+        <td align="center" valign="top">No (default <code>false</code>)</td>
+      </tr>
       <tr>
         <td valign="top">includeConstructors</td>
         <td valign="top">Whether to generate constructors for generated Java types</td>
         <td align="center" valign="top">No (default <code>false</code>)</td>
       </tr>
-
       <tr>
         <td valign="top">constructorsRequiredPropertiesOnly</td>
         <td valign="top">Whether generated constructors should have parameters for all properties, or only required ones.</td>
         <td align="center" valign="top">No (default <code>false</code>)</td>
       </tr>
-
+      <tr>
+        <td valign="top">includeHashcodeAndEquals</td>
+        <td valign="top">Whether to use include <code>hashCode</code> and <code>equals</code> methods in generated Java types.</td>
+        <td align="center" valign="top">No (default <code>true</code>)</td>
+      </tr>
       <tr>
         <td valign="top">includeJsr303Annotations</td>
         <td valign="top">Whether to include <a href="http://jcp.org/en/jsr/detail?id=303">JSR-303/349</a> annotations (for schema rules like minimum, maximum, etc) in generated Java types.
@@ -127,6 +155,11 @@
         <td align="center" valign="top">No (default <code>true</code>)</td>
       </tr>
       <tr>
+        <td valign="top">initializeCollections</td>
+        <td valign="top">Whether to initialize Set and List fields as empty collections, or leave them as <code>null</code>.</td>
+        <td align="center" valign="top">Yes (default <code>true</code>)</td>
+      </tr>
+      <tr>
         <td valign="top">outputEncoding</td>
         <td valign="top">The character encoding that should be used when writing the generated Java source files.</td>
         <td align="center" valign="top">No (default <code>UTF-8</code>)</td>
@@ -134,6 +167,11 @@
       <tr>
         <td valign="top">parcelable</td>
         <td valign="top">**EXPERIMENTAL** Whether to make the generated types 'parcelable' (for Android development).</td>
+        <td align="center" valign="top">No (default <code>false</code>)</td>
+      </tr>
+      <tr>
+        <td valign="top">serializable</td>
+        <td valign="top">Whether to make the generated types 'serializable'.</td>
         <td align="center" valign="top">No (default <code>false</code>)</td>
       </tr>
       <tr>
@@ -182,26 +220,33 @@
         <td align="center" valign="top">No (default <code>true</code>)</td>
       </tr>
       <tr>
-        <td valign="top">useJodaDates</td>
-        <td valign="top">Whether to use <code>org.joda.time.DateTime</code> instead of <code>java.util.Date</code>
-            when adding date-time type fields to generated Java types.</td>
+        <td valign="top">useBigDecimals</td>
+        <td valign="top">Whether to use the java type <code>BigDecimal</code> instead of <code>float</code> (or <code>java.lang.Float</code>) when representing the JSON Schema type 'number'. Note that this overrides <code>useDoubleNumbers</code>.</td>
         <td align="center" valign="top">No (default <code>false</code>)</td>
       </tr>
-        <tr>
-            <td valign="top">useJodaLocalDates</td>
-            <td valign="top">Whether to use <code>org.joda.time.LocalDate</code> instead of String
-                when adding string fields with format date to generated Java types.</td>
-            <td align="center" valign="top">No (default <code>false</code>)</td>
-        </tr>
-        <tr>
-            <td valign="top">useJodaLocalTimes</td>
-            <td valign="top">Whether to use <code>org.joda.time.LocalTime</code> instead of String
-                when adding string fields with format time to generated Java types.</td>
-            <td align="center" valign="top">No (default <code>false</code>)</td>
-        </tr>
-        <tr>
+      <tr>
+        <td valign="top">useJodaDates</td>
+        <td valign="top">Whether to use <code>org.joda.time.DateTime</code> instead of <code>java.util.Date</code>  when adding date-time type fields to generated Java types.</td>
+        <td align="center" valign="top">No (default <code>false</code>)</td>
+      </tr>
+      <tr>
+        <td valign="top">useJodaLocalDates</td>
+        <td valign="top">Whether to use <code>org.joda.time.LocalDate</code> instead of <code>java.lang.String</code> when adding string fields with format date to generated Java types.</td>
+        <td align="center" valign="top">No (default <code>false</code>)</td>
+      </tr>
+      <tr>
+        <td valign="top">useJodaLocalTimes</td>
+        <td valign="top">Whether to use <code>org.joda.time.LocalTime</code> instead of <code>java.lang.String</code> when adding string fields with format time to generated Java types.</td>
+        <td align="center" valign="top">No (default <code>false</code>)</td>
+      </tr>
+      <tr>
         <td valign="top">useLongIntegers</td>
         <td valign="top">Whether to use the java type <code>long</code> (or <code>Long</code>) instead of <code>int</code> (or <code>Integer</code>) when representing the JSON Schema type 'integer'.</td>
+        <td align="center" valign="top">No (default <code>false</code>)</td>
+      </tr>
+      <tr>
+        <td valign="top">useBigIntegers</td>
+        <td valign="top">Whether to use the java type <code>BigInteger</code> instead of <code>int</code> (or <code>java.lang.Integer</code>) when representing the JSON Schema type 'integer'. Note that this overrides <code>useLongIntegers</code>.</td>
         <td align="center" valign="top">No (default <code>false</code>)</td>
       </tr>
       <tr>
@@ -209,20 +254,40 @@
         <td valign="top">Whether to use primitives (<code>long</code>, <code>double</code>, <code>boolean</code>) instead of wrapper types where possible when generating bean properties (has the side-effect of making those.</td>
         <td align="center" valign="top">No (default <code>false</code>)</td>
       </tr>
-        <tr>
-            <td valign="top">initializeCollections</td>
-            <td valign="top">Whether to initialize Set and List fields as empty collections, or leave them as <code>null</code>.</td>
-            <td align="center" valign="top">Yes (default <code>true</code>)</td>
-        </tr>
-        <tr>
-        <td valign="top">classNamePrefix</td>
-        <td valign="top">Whether to add a prefix to generated classes</td>
-        <td align="center" valign="top">No (default <code>""</code>)</td>
+      <tr>
+        <td valign="top">targetVersion</td>
+        <td valign="top">The target version for generated source files.</td>
+        <td align="center" valign="top">No (default <code>1.6</code>)</td>
       </tr>
       <tr>
-        <td valign="top">classNameSuffix</td>
-        <td valign="top">Whether to add a Suffix to generated classes</td>
-        <td align="center" valign="top">No (default <code>""</code>)</td>
+        <td valign="top">dateTimeType</td>
+        <td valign="top">The java type to use instead of <code>java.util.Date</code> when adding date-time type fields to generated Java types.
+          <ul>
+            <li><code>org.joda.time.LocalDateTime</code> (Joda)</li>
+            <li><code>java.time.LocalDateTime</code> (JSR310)</li>
+          </ul>
+        </td>
+        <td align="center" valign="top">No</td>
+      </tr>
+      <tr>
+        <td valign="top">dateType</td>
+        <td valign="top">The java type to use instead of <code>java.lang.String</code> when adding string fields with format date to generated Java types.
+          <ul>
+            <li><code>org.joda.time.LocalDate</code> (Joda)</li>
+            <li><code>java.time.LocalDate</code> (JSR310)</li>
+          </ul>
+        </td>
+        <td align="center" valign="top">No</td>
+      </tr>
+      <tr>
+        <td valign="top">timeType</td>
+        <td valign="top">The java type to use instead of <code>java.lang.String</code> when adding string fields with format time to generated Java types.
+          <ul>
+            <li><code>org.joda.time.LocalTime</code> (Joda)</li>
+            <li><code>java.time.LocalTime</code> (JSR310)</li>
+          </ul>
+        </td>
+        <td align="center" valign="top">No</td>
       </tr>
     </table>
 

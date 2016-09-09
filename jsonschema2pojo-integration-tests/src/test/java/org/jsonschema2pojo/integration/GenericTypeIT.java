@@ -16,30 +16,32 @@
 
 package org.jsonschema2pojo.integration;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;
 
-import static org.hamcrest.Matchers.*;
-import static org.jsonschema2pojo.integration.util.CodeGenerationHelper.*;
-import static org.junit.Assert.*;
+import org.jsonschema2pojo.integration.util.Jsonschema2PojoRule;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 public class GenericTypeIT {
+    @ClassRule public static Jsonschema2PojoRule classSchemaRule = new Jsonschema2PojoRule();
 
     private static Class<?> classWithGenericTypes;
 
     @BeforeClass
     public static void generateAndCompileClass() throws ClassNotFoundException {
 
-        classWithGenericTypes = generateAndCompile("/schema/type/genericJavaType.json", "com.example").loadClass("com.example.GenericJavaType");
+        classWithGenericTypes = classSchemaRule.generateAndCompile("/schema/type/genericJavaType.json", "com.example").loadClass("com.example.GenericJavaType");
 
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Test
     public void genericTypeCanBeIncludedInJavaType() throws ClassNotFoundException, NoSuchMethodException, SecurityException {
 
@@ -50,6 +52,19 @@ public class GenericTypeIT {
         Type[] typeArguments = ((ParameterizedType) getterMethod.getGenericReturnType()).getActualTypeArguments();
         assertThat(typeArguments[0], is(equalTo((Type)String.class)));
         assertThat(typeArguments[1], is(equalTo((Type)Integer.class)));
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @Test
+    public void genericTypeCanBeIncludedWhenTypeObjectIsOmitted() throws ClassNotFoundException, NoSuchMethodException, SecurityException {
+
+        Method getterMethod = classWithGenericTypes.getMethod("getD");
+        assertThat((Class<Map>) getterMethod.getReturnType(), is(equalTo(Map.class)));
+        assertThat(getterMethod.getGenericReturnType(), is(instanceOf(ParameterizedType.class)));
+
+        Type[] typeArguments = ((ParameterizedType) getterMethod.getGenericReturnType()).getActualTypeArguments();
+        assertThat(typeArguments[0], is(equalTo((Type) String.class)));
+        assertThat(typeArguments[1], is(equalTo((Type) Double.class)));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

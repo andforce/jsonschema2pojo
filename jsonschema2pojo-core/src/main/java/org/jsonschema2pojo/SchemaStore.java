@@ -19,6 +19,7 @@ package org.jsonschema2pojo;
 import static org.apache.commons.lang3.StringUtils.*;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,10 +27,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 public class SchemaStore {
 
-    private Map<URI, Schema> schemas = new HashMap<URI, Schema>();
+    protected Map<URI, Schema> schemas = new HashMap<URI, Schema>();
 
-    private FragmentResolver fragmentResolver = new FragmentResolver();
-    private ContentResolver contentResolver = new ContentResolver();
+    protected FragmentResolver fragmentResolver = new FragmentResolver();
+    protected ContentResolver contentResolver = new ContentResolver();
 
     /**
      * Create or look up a new schema which has the given ID and read the
@@ -47,16 +48,17 @@ public class SchemaStore {
             JsonNode content = contentResolver.resolve(removeFragment(id));
 
             if (id.toString().contains("#")) {
-                content = fragmentResolver.resolve(content, '#' + substringAfter(id.toString(), "#"));
+                JsonNode childContent = fragmentResolver.resolve(content, '#' + id.getFragment());
+                schemas.put(id, new Schema(id, childContent, content));
+            } else {
+                schemas.put(id, new Schema(id, content, content));
             }
-
-            schemas.put(id, new Schema(id, content));
         }
 
         return schemas.get(id);
     }
 
-    private URI removeFragment(URI id) {
+    protected URI removeFragment(URI id) {
         return URI.create(substringBefore(id.toString(), "#"));
     }
 
@@ -77,25 +79,46 @@ public class SchemaStore {
     @SuppressWarnings("PMD.UselessParentheses")
     public Schema create(Schema parent, String path) {
 
-        if (path.equals("#")) {
-            return parent;
+        if (!path.equals("#")) {
+            // if path is an empty string then resolving it below results in jumping up a level. e.g. "/path/to/file.json" becomes "/path/to"
+            path = stripEnd(path, "#?&/");
         }
-        
-        path = stripEnd(path, "#?&/");
+
+        // encode the fragment for any funny characters
+        if (path.contains("#")) {
+            String pathExcludingFragment = substringBefore(path, "#");
+            String fragment = substringAfter(path, "#");
+            URI fragmentURI;
+            try {
+                fragmentURI = new URI(null, null, fragment);
+            } catch (URISyntaxException e) {
+                throw new IllegalArgumentException("Invalid fragment: " + fragment + " in path: " + path);
+            }
+            path = pathExcludingFragment + "#" + fragmentURI.getRawFragment();
+        }
 
         URI id = (parent == null || parent.getId() == null) ? URI.create(path) : parent.getId().resolve(path);
 
-        if (selfReferenceWithoutParentFile(parent, path)) {
-            schemas.put(id, new Schema(id, fragmentResolver.resolve(parent.getContent(), path)));
+        String stringId = id.toString();
+        if (stringId.endsWith("#")) {
+            try {
+                id = new URI(stripEnd(stringId, "#"));
+            } catch (URISyntaxException e) {
+                throw new IllegalArgumentException("Bad path: " + stringId);
+            }
+        }
+
+        if (selfReferenceWithoutParentFile(parent, path) || substringBefore(stringId, "#").isEmpty()) {
+            schemas.put(id, new Schema(id, fragmentResolver.resolve(parent.getParentContent(), path), parent.getParentContent()));
             return schemas.get(id);
         }
-        
+
         return create(id);
 
     }
 
-    private boolean selfReferenceWithoutParentFile(Schema parent, String path) {
-        return parent != null && parent.getId() == null && path.startsWith("#/");
+    protected boolean selfReferenceWithoutParentFile(Schema parent, String path) {
+        return parent != null && (parent.getId() == null || parent.getId().toString().startsWith("#/")) && path.startsWith("#/");
     }
 
     public synchronized void clearCache() {

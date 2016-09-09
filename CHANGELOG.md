@@ -1,5 +1,97 @@
 # Changelog
 
+## 0.4.26
+* Remove javax.annotation.Generated as it doesn't ship with Android ([#577](https://github.com/joelittlejohn/jsonschema2pojo/issues/577))
+
+## 0.4.25
+* Supporting other primitives as backing types for enums ([#612](https://github.com/joelittlejohn/jsonschema2pojo/pull/612))
+* Generate hashCode and equals even without declared fields ([#611](https://github.com/joelittlejohn/jsonschema2pojo/pull/611))
+* Use unique enum constant names ([#609](https://github.com/joelittlejohn/jsonschema2pojo/pull/609))
+
+## 0.4.24
+* Support "required" keyword draft04 array-style when generating constuctors ([#599](https://github.com/joelittlejohn/jsonschema2pojo/pull/599))
+* Add feature to allow comments in schema files ([#589](https://github.com/joelittlejohn/jsonschema2pojo/issues/589))
+* javaType with generics does not apply correct imports when "type": "object" is omitted ([#582](https://github.com/joelittlejohn/jsonschema2pojo/issues/582))
+* Add @JsonPropertyDescription when "description" property present ([#571](https://github.com/joelittlejohn/jsonschema2pojo/pull/571))
+* Constructors are incompatible with extends keyword ([#555](https://github.com/joelittlejohn/jsonschema2pojo/issues/555))
+
+## 0.4.23
+* Force lower camel case fields when using JSON ([#563](https://github.com/joelittlejohn/jsonschema2pojo/issues/563))
+* Fix broken embedded refs ([#560](https://github.com/joelittlejohn/jsonschema2pojo/pull/560))
+* Added file extensions config parameter ([#548](https://github.com/joelittlejohn/jsonschema2pojo/pull/548))
+* Overridden builders are not added to empty child class ([#538](https://github.com/joelittlejohn/jsonschema2pojo/issues/538))
+* Wrong default value for BigDecimal ([#535](https://github.com/joelittlejohn/jsonschema2pojo/issues/535))
+* Add Moshi 1.x annotation style ([#529](https://github.com/joelittlejohn/jsonschema2pojo/pull/529))
+* Add serializable as an optional/configurable option ([#404](https://github.com/joelittlejohn/jsonschema2pojo/issues/404))
+
+## 0.4.22
+* Adding date-time types to Maven plugin mojo configuration ([#531](https://github.com/joelittlejohn/jsonschema2pojo/pull/531))
+* Fix javaName breaking required properties ([#528](https://github.com/joelittlejohn/jsonschema2pojo/pull/528))
+* Add support for using BigDecimal to represent numbers ([#517](https://github.com/joelittlejohn/jsonschema2pojo/pull/517))
+* Jsonschema2pojoRule report problems to STDERR ([#513](https://github.com/joelittlejohn/jsonschema2pojo/pull/513))
+
+## 0.4.21
+* Fix NullPointerException in Gradle plugin for Java (non-Android) projects ([#510](https://github.com/joelittlejohn/jsonschema2pojo/pull/510))
+
+## 0.4.20
+* Regression: when a extending a schema with a redefinition of the same field, with methods should be generated only once ([#507](https://github.com/joelittlejohn/jsonschema2pojo/issues/507))
+* Unnecessary @SuppressWarnings java warnings after upgrade ([#498](https://github.com/joelittlejohn/jsonschema2pojo/issues/498))
+* Improved Android support via Gradle plugin (NOTE: Changes behaviour regarding output directory) ([#495](https://github.com/joelittlejohn/jsonschema2pojo/pull/495))
+
+## 0.4.19
+* Add javaName schema property ([#499](https://github.com/joelittlejohn/jsonschema2pojo/pull/499))
+* Declare an enum without that "static" ([#496](https://github.com/joelittlejohn/jsonschema2pojo/issues/496))
+* includeDynamicAccessors should default to false (don't include dynamic accessors by default) ([#482](https://github.com/joelittlejohn/jsonschema2pojo/pull/482))
+* Inflector - incorrect for word "specimen" ([#479](https://github.com/joelittlejohn/jsonschema2pojo/issues/479))
+* Allow JSON to be passed as a String to SchemaMapper ([#475](https://github.com/joelittlejohn/jsonschema2pojo/pull/475))
+* Prefix / Suffix support when javaType is not specified ([#465](https://github.com/joelittlejohn/jsonschema2pojo/pull/465))
+
+## 0.4.18
+* Added support for custom date-time, date, time classes. ([#469](https://github.com/joelittlejohn/jsonschema2pojo/pull/469))
+* Databases element of type array generated class name Databasis instead of Database ([#461](https://github.com/joelittlejohn/jsonschema2pojo/issues/461))
+
+## 0.4.17
+* Covariant builders - copy builder methods from superclass, with narrow return type ([#455](https://github.com/joelittlejohn/jsonschema2pojo/issues/455))
+* Specify target JVM version ([#454](https://github.com/joelittlejohn/jsonschema2pojo/pull/454))
+* Nested refs not resolved correctly when schema supplied as string ([#446](https://github.com/joelittlejohn/jsonschema2pojo/issues/446))
+* Make Inflector more amenable to thread safety. ([#435](https://github.com/joelittlejohn/jsonschema2pojo/pull/435))
+* Add Dynamic Accessors ([#386](https://github.com/joelittlejohn/jsonschema2pojo/pull/386))
+
+## 0.4.16
+* Use minimum and maximum value of an integer property to determine java type long ([#434](https://github.com/joelittlejohn/jsonschema2pojo/pull/434))
+* Fix path to jar in windows script for the case it is run not from home dir ([#432](https://github.com/joelittlejohn/jsonschema2pojo/pull/432))
+* Make the quick lookup map 'final' ([#428](https://github.com/joelittlejohn/jsonschema2pojo/pull/428))
+* "extends" schema resolution assumes current schema is at root of file ([#425](https://github.com/joelittlejohn/jsonschema2pojo/issues/425))
+* Recursive $ref failed ([#250](https://github.com/joelittlejohn/jsonschema2pojo/issues/250))
+
+## 0.4.15
+* $ref doesn't work when ref'ed message also has extends ([#408](https://github.com/joelittlejohn/jsonschema2pojo/issues/408))
+* Support direct class inheritance with 'extendsJavaType', without using 'extends' ([#402](https://github.com/joelittlejohn/jsonschema2pojo/issues/402))
+* additionalProperties java.util.Map is not generated by default when embedding this library and extending DefaultGenerationConfig ([#398](https://github.com/joelittlejohn/jsonschema2pojo/issues/398))
+* If a schema sits inside a directory with a hyphen in its name, plugin will generate an invalid Java package name ([#383](https://github.com/joelittlejohn/jsonschema2pojo/issues/383))
+* Allow get/set methods to be disabled, use public fields instead ([#355](https://github.com/joelittlejohn/jsonschema2pojo/issues/355))
+
+## 0.4.14
+* Fix 'Unable to load class org.jsonschema2pojo.NoopAnnotator' from Gradle plugin ([#395](https://github.com/joelittlejohn/jsonschema2pojo/pull/395))
+* Library projects should use android.libraryVariants instead of android.applicationVariants  ([#391](https://github.com/joelittlejohn/jsonschema2pojo/pull/391))
+* Allow nullable type (instead of Object) when JSON type is an array with ["string", "null"] ([#390](https://github.com/joelittlejohn/jsonschema2pojo/issues/390))
+* Allow custom names to be supplied when creating an enum ([#385](https://github.com/joelittlejohn/jsonschema2pojo/issues/385))
+* Allow disabling additionalProperties generation with a global config option ([#376](https://github.com/joelittlejohn/jsonschema2pojo/issues/376))
+* 'javaInterfaces' which contain generics produce syntactically incorrect imports  ([#317](https://github.com/joelittlejohn/jsonschema2pojo/issues/317))
+
+## 0.4.13
+* RequiredArrayRule not working for properties with _ or -. ([#377](https://github.com/joelittlejohn/jsonschema2pojo/issues/377))
+* Maven plugin shows sourcePaths error for includes/excludes when sourcePaths is not defined ([#374](https://github.com/joelittlejohn/jsonschema2pojo/issues/374))
+
+## 0.4.12
+* Didn't work in Android Studio with with current master branch '040e3ae'  ([#370](https://github.com/joelittlejohn/jsonschema2pojo/issues/370))
+* Use the correct ClassLoader in createFromParcel for lists ([#356](https://github.com/joelittlejohn/jsonschema2pojo/pull/356))
+* Find jar when jsonschema2pojo sh script is not running in script folder ([#351](https://github.com/joelittlejohn/jsonschema2pojo/pull/351))
+* Fix parameter description of --class-prefix and --class-suffix. ([#350](https://github.com/joelittlejohn/jsonschema2pojo/pull/350))
+* Multiple enum array properties with same name cause JClassAlreadyExistsException ([#349](https://github.com/joelittlejohn/jsonschema2pojo/pull/349))
+* Allow empty package names ([#348](https://github.com/joelittlejohn/jsonschema2pojo/pull/348))
+* Corrected Exclude pattern behavior with Maven to avoid excluding all files ([#340](https://github.com/joelittlejohn/jsonschema2pojo/pull/340))
+
 ## 0.4.11
 * Add super() to the equals/hashcode impl ([#333](https://github.com/joelittlejohn/jsonschema2pojo/pull/333))
 * Use Gson @SerializedName annotation on ALL fields, even when JSON name matches Java name ([#327](https://github.com/joelittlejohn/jsonschema2pojo/issues/327))
@@ -30,6 +122,7 @@
 * Add ability to set prefixes/suffixes for generated classes ([#258](https://github.com/joelittlejohn/jsonschema2pojo/pull/258))
 
 ## 0.4.6
+* Support for @JsonTypeInfo in generated classes using deserializationClassProperty ([#235](https://github.com/joelittlejohn/jsonschema2pojo/issues/235)
 * ClassNotFoundException when attempting to use a custom annotator from a project dependency ([#256](https://github.com/joelittlejohn/jsonschema2pojo/issues/256))
 * Inflector incorrectly singularizes Address to Addres  ([#244](https://github.com/joelittlejohn/jsonschema2pojo/issues/244))
 * propertyWordDelimiters config is ignored ([#243](https://github.com/joelittlejohn/jsonschema2pojo/issues/243))
